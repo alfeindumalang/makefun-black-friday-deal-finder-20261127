@@ -13,7 +13,7 @@
 // kit shipped it, because the scorer rebuilds the dossier with its own
 // copy and compares the two byte for byte.
 
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildDossier } from './vendor/makefun-frontend.ts';
@@ -36,9 +36,13 @@ const CAPS = {
 };
 
 // Start from a clean output directory so no stale file from an earlier
-// run can ride along.
-rmSync(outDir, { recursive: true, force: true });
+// run can ride along. The directory itself must stay put, though: on the
+// grader it is a mounted volume, and removing a mount point fails, so
+// only what is inside it is cleared, one entry at a time.
 mkdirSync(outDir, { recursive: true });
+for (const entry of readdirSync(outDir)) {
+  rmSync(join(outDir, entry), { recursive: true, force: true });
+}
 
 // Both folders must exist: a missing one is a build failure, not a
 // half-written output.
